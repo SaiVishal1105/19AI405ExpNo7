@@ -31,4 +31,119 @@ When added to a simple minimax algorithm, it gives the same output but cuts off 
 ![image](https://github.com/natsaravanan/19AI405FUNDAMENTALSOFARTIFICIALINTELLIGENCE/assets/87870499/440797bd-53cb-49c1-b18d-89776864c3e7)
 ![image](https://github.com/natsaravanan/19AI405FUNDAMENTALSOFARTIFICIALINTELLIGENCE/assets/87870499/81575a16-26b2-46f1-a8ac-27c9ed0a0fe5)
 
+### Program:
+```
+#Tic-Tac-Toe board
+class Board:
+    def __init__(self):
+        self.board = [' ' for _ in range(9)]
 
+    def available_moves(self):
+        return [i for i, spot in enumerate(self.board) if spot == ' ']
+
+    def make_move(self, move, player):
+        self.board[move] = player
+
+    def is_winner(self, player):
+        winning_combos = [[0, 1, 2], [3, 4, 5], [6, 7, 8],
+                          [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                          [0, 4, 8], [2, 4, 6]]
+        for combo in winning_combos:
+            if all(self.board[i] == player for i in combo):
+                return True
+        return False
+
+    def is_full(self):
+        return ' ' not in self.board
+
+    def print_board(self):
+        for i in range(0, 9, 3):
+            print('|'.join(self.board[i:i+3]))
+            if i < 6:
+                print('-' * 5)
+
+#Minimax algorithm with alpha-beta pruning
+def minimax(board, depth, player, alpha, beta):
+    if board.is_winner('X'):
+        return -1
+    elif board.is_winner('O'):
+        return 1
+    elif board.is_full():
+        return 0
+
+    if player == 'O':
+        best_val = float('-inf')
+        for move in board.available_moves():
+            board.make_move(move, player)
+            value = minimax(board, depth + 1, 'X', alpha, beta)
+            board.make_move(move, ' ')
+            best_val = max(best_val, value)
+            alpha = max(alpha, best_val)
+            if beta <= alpha:
+                break
+        return best_val
+    else:
+        best_val = float('inf')
+        for move in board.available_moves():
+            board.make_move(move, player)
+            value = minimax(board, depth + 1, 'O', alpha, beta)
+            board.make_move(move, ' ')
+            best_val = min(best_val, value)
+            beta = min(beta, best_val)
+            if beta <= alpha:
+                break
+        return best_val
+
+#Find the best move for the AI player using minimax with alpha-beta pruning
+def find_best_move(board):
+    best_move = -1
+    best_val = float('-inf')
+    alpha = float('-inf')
+    beta = float('inf')
+
+    for move in board.available_moves():
+        board.make_move(move, 'O')
+        value = minimax(board, 0, 'X', alpha, beta)
+        board.make_move(move, ' ')
+        if value > best_val:
+            best_val = value
+            best_move = move
+        alpha = max(alpha, best_val)
+    return best_move
+
+#Main function to play the game
+def play_game():
+    board = Board()
+    current_player = 'X'
+
+    while True:
+        board.print_board()
+
+        if current_player == 'X':
+            move = int(input("Enter your move (0-8): "))
+            if move not in board.available_moves():
+                print("Invalid move. Try again.")
+                continue
+        else:
+            move = find_best_move(board)
+            print(f"AI plays move: {move}")
+
+        board.make_move(move, current_player)
+
+        if board.is_winner(current_player):
+            board.print_board()
+            print(f"{current_player} wins!")
+            break
+        elif board.is_full():
+            board.print_board()
+            print("It's a tie!")
+            break
+
+        current_player = 'O' if current_player == 'X' else 'X'
+
+#Play the game
+play_game()
+
+```
+### Result:
+Alpha-beta pruning of Minimax Search Algorithm for a Simple TIC-TAC-TOE game has been implemented successfully.
