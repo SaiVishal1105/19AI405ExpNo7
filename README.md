@@ -33,117 +33,189 @@ When added to a simple minimax algorithm, it gives the same output but cuts off 
 
 ### Program:
 ```
-#Tic-Tac-Toe board
-class Board:
+import time
+
+class Game:
     def __init__(self):
-        self.board = [' ' for _ in range(9)]
+        self.initialize_game()
 
-    def available_moves(self):
-        return [i for i, spot in enumerate(self.board) if spot == ' ']
+    def initialize_game(self):
+        self.current_state = [['.','.','.'],
+                              ['.','.','.'],
+                              ['.','.','.']]
 
-    def make_move(self, move, player):
-        self.board[move] = player
+        # Player X always plays first
+        self.player_turn = 'X'
 
-    def is_winner(self, player):
-        winning_combos = [[0, 1, 2], [3, 4, 5], [6, 7, 8],
-                          [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                          [0, 4, 8], [2, 4, 6]]
-        for combo in winning_combos:
-            if all(self.board[i] == player for i in combo):
-                return True
-        return False
-
-    def is_full(self):
-        return ' ' not in self.board
-
-    def print_board(self):
-        for i in range(0, 9, 3):
-            print('|'.join(self.board[i:i+3]))
-            if i < 6:
-                print('-' * 5)
-
-#Minimax algorithm with alpha-beta pruning
-def minimax(board, depth, player, alpha, beta):
-    if board.is_winner('X'):
-        return -1
-    elif board.is_winner('O'):
-        return 1
-    elif board.is_full():
-        return 0
-
-    if player == 'O':
-        best_val = float('-inf')
-        for move in board.available_moves():
-            board.make_move(move, player)
-            value = minimax(board, depth + 1, 'X', alpha, beta)
-            board.make_move(move, ' ')
-            best_val = max(best_val, value)
-            alpha = max(alpha, best_val)
-            if beta <= alpha:
-                break
-        return best_val
-    else:
-        best_val = float('inf')
-        for move in board.available_moves():
-            board.make_move(move, player)
-            value = minimax(board, depth + 1, 'O', alpha, beta)
-            board.make_move(move, ' ')
-            best_val = min(best_val, value)
-            beta = min(beta, best_val)
-            if beta <= alpha:
-                break
-        return best_val
-
-#Find the best move for the AI player using minimax with alpha-beta pruning
-def find_best_move(board):
-    best_move = -1
-    best_val = float('-inf')
-    alpha = float('-inf')
-    beta = float('inf')
-
-    for move in board.available_moves():
-        board.make_move(move, 'O')
-        value = minimax(board, 0, 'X', alpha, beta)
-        board.make_move(move, ' ')
-        if value > best_val:
-            best_val = value
-            best_move = move
-        alpha = max(alpha, best_val)
-    return best_move
-
-#Main function to play the game
-def play_game():
-    board = Board()
-    current_player = 'X'
-
-    while True:
-        board.print_board()
-
-        if current_player == 'X':
-            move = int(input("Enter your move (0-8): "))
-            if move not in board.available_moves():
-                print("Invalid move. Try again.")
-                continue
+    def draw_board(self):
+        for i in range(0, 3):
+            for j in range(0, 3):
+                print('{}|'.format(self.current_state[i][j]), end=" ")
+            print()
+        print()
+    def is_valid(self, px, py):
+        if px < 0 or px > 2 or py < 0 or py > 2:
+            return False
+        elif self.current_state[px][py] != '.':
+            return False
         else:
-            move = find_best_move(board)
-            print(f"AI plays move: {move}")
+            return True
+    def is_end(self):
+    # Vertical win
+        for i in range(0, 3):
+            if (self.current_state[0][i] != '.' and
+                self.current_state[0][i] == self.current_state[1][i] and
+                self.current_state[1][i] == self.current_state[2][i]):
+                return self.current_state[0][i]
 
-        board.make_move(move, current_player)
+        # Horizontal win
+        for i in range(0, 3):
+            if (self.current_state[i] == ['X', 'X', 'X']):
+                return 'X'
+            elif (self.current_state[i] == ['O', 'O', 'O']):
+                return 'O'
 
-        if board.is_winner(current_player):
-            board.print_board()
-            print(f"{current_player} wins!")
-            break
-        elif board.is_full():
-            board.print_board()
-            print("It's a tie!")
-            break
+    # Main diagonal win
+        if (self.current_state[0][0] != '.' and
+            self.current_state[0][0] == self.current_state[1][1] and
+            self.current_state[0][0] == self.current_state[2][2]):
+            return self.current_state[0][0]
 
-        current_player = 'O' if current_player == 'X' else 'X'
+    # Second diagonal win
+        if (self.current_state[0][2] != '.' and
+            self.current_state[0][2] == self.current_state[1][1] and
+            self.current_state[0][2] == self.current_state[2][0]):
+            return self.current_state[0][2]
 
-#Play the game
-play_game()
+    # Is the whole board full?
+        for i in range(0, 3):
+            for j in range(0, 3):
+            # There's an empty field, we continue the game
+                if (self.current_state[i][j] == '.'):
+                    return None
 
+    # It's a tie!
+        return '.'
+    def max_alpha_beta(self, alpha, beta):
+        maxv = -2
+        px = None
+        py = None
+
+        result = self.is_end()
+
+        if result == 'X':
+            return (-1, 0, 0)
+        elif result == 'O':
+            return (1, 0, 0)
+        elif result == '.':
+            return (0, 0, 0)
+
+        for i in range(0, 3):
+            for j in range(0, 3):
+                if self.current_state[i][j] == '.':
+                    self.current_state[i][j] = 'O'
+                    (m, min_i, in_j) = self.min_alpha_beta(alpha, beta)
+                    if m > maxv:
+                        maxv = m
+                        px = i
+                        py = j
+                    self.current_state[i][j] = '.'
+
+                    # Next two ifs in Max and Min are the only difference between regular algorithm and minimax
+                    if maxv >= beta:
+                        return (maxv, px, py)
+
+                    if maxv > alpha:
+                        alpha = maxv
+
+        return (maxv, px, py)
+
+    def min_alpha_beta(self, alpha, beta):
+
+        minv = 2
+
+        qx = None
+        qy = None
+
+        result = self.is_end()
+
+        if result == 'X':
+            return (-1, 0, 0)
+        elif result == 'O':
+            return (1, 0, 0)
+        elif result == '.':
+            return (0, 0, 0)
+
+        for i in range(0, 3):
+            for j in range(0, 3):
+                if self.current_state[i][j] == '.':
+                    self.current_state[i][j] = 'X'
+                    (m, max_i, max_j) = self.max_alpha_beta(alpha, beta)
+                    if m < minv:
+                        minv = m
+                        qx = i
+                        qy = j
+                    self.current_state[i][j] = '.'
+
+                    if minv <= alpha:
+                        return (minv, qx, qy)
+
+                    if minv < beta:
+                        beta = minv
+
+        return (minv, qx, qy)
+    def play_alpha_beta(self):
+        while True:
+            self.draw_board()
+            self.result = self.is_end()
+
+            if self.result != None:
+                if self.result == 'X':
+                    print('The winner is X!')
+                elif self.result == 'O':
+                    print('The winner is O!')
+                elif self.result == '.':
+                    print("It's a tie!")
+
+
+                self.initialize_game()
+                return
+
+            if self.player_turn == 'X':
+
+                while True:
+                    start = time.time()
+                    (m, qx, qy) = self.min_alpha_beta(-2, 2)
+                    end = time.time()
+                    print('Evaluation time: {}s'.format(round(end - start, 7)))
+                    print('Recommended move: X = {}, Y = {}'.format(qx, qy))
+
+                    px = int(input('Insert the X coordinate: '))
+                    py = int(input('Insert the Y coordinate: '))
+
+                    qx = px
+                    qy = py
+
+                    if self.is_valid(px, py):
+                        self.current_state[px][py] = 'X'
+                        self.player_turn = 'O'
+                        break
+                    else:
+                        print('The move is not valid! Try again.')
+
+            else:
+                (m, px, py) = self.max_alpha_beta(-2, 2)
+                self.current_state[px][py] = 'O'
+                self.player_turn = 'X'
+    
+     
+    
+def main():
+    g = Game()
+    g.play_alpha_beta()
+
+if __name__ == "__main__":
+    main()
 ```
 ### Result:
 Alpha-beta pruning of Minimax Search Algorithm for a Simple TIC-TAC-TOE game has been implemented successfully.
